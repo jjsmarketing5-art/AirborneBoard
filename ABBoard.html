@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Airborne A Draper - Display Board</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a0a; --dark: #1a1a1a; --card: #222; --card2: #2a2a2a;
+    --orange: #e8651a; --white: #f0f0f0; --gray: #888; --border: #333;
+    --green: #4caf50; --red: #f44336;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--black); color:var(--white); font-family:'Barlow',sans-serif; height:100vh; overflow:hidden; display:flex; flex-direction:column; }
+
+  /* HEADER */
+  header { background:var(--dark); display:flex; align-items:center; justify-content:space-between; padding:10px 24px; border-bottom:3px solid var(--orange); flex-shrink:0; }
+  .logo-area { display:flex; align-items:center; gap:14px; }
+  .logo-icon { width:64px; height:64px; flex-shrink:0; }
+  .logo-text { font-family:'Barlow Condensed',sans-serif; font-weight:800; font-size:2rem; line-height:1; text-transform:uppercase; letter-spacing:1px; }
+  .logo-text span { color:var(--orange); }
+  .logo-sub { font-family:'Barlow Condensed',sans-serif; font-size:1.1rem; color:var(--gray); letter-spacing:3px; text-transform:uppercase; margin-top:2px; }
+  .header-right { display:flex; flex-direction:column; align-items:flex-end; gap:4px; }
+  .sling-status { display:flex; align-items:center; gap:6px; font-size:0.7rem; color:var(--gray); font-family:'Barlow Condensed',sans-serif; letter-spacing:1px; text-transform:uppercase; }
+  .status-dot { width:8px; height:8px; border-radius:50%; background:var(--gray); transition:background 0.3s; }
+  .status-dot.connected { background:var(--green); box-shadow:0 0 6px var(--green); }
+  .status-dot.error { background:var(--red); }
+  .status-dot.manual { background:var(--orange); }
+  .clock-area { text-align:right; }
+  .clock-date { font-family:'Barlow Condensed',sans-serif; font-size:1rem; color:var(--gray); letter-spacing:2px; }
+  .clock-time { font-family:'Barlow Condensed',sans-serif; font-size:3.2rem; font-weight:800; color:var(--white); letter-spacing:2px; line-height:1; }
+
+  /* MAIN GRID */
+  main { flex:1; display:grid; grid-template-columns:220px 1fr 220px; grid-template-rows:1fr auto; gap:10px; padding:10px; min-height:0; }
+  .card { background:var(--card); border-radius:6px; overflow:hidden; display:flex; flex-direction:column; }
+  .card-header { background:var(--card2); padding:10px 14px; border-bottom:2px solid var(--orange); display:flex; align-items:center; gap:8px; flex-shrink:0; }
+  .card-header h2 { font-family:'Barlow Condensed',sans-serif; font-size:1.3rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; }
+  .card-body { padding:12px 14px; flex:1; overflow:hidden; }
+
+  /* AREAS */
+  #areas-card { grid-column:1; grid-row:1; }
+  .area-item { display:flex; flex-direction:column; padding:8px 0; border-bottom:1px solid var(--border); }
+  .area-item:last-child { border-bottom:none; }
+  .area-name { font-family:'Barlow Condensed',sans-serif; font-weight:600; color:var(--gray); text-transform:uppercase; letter-spacing:1px; font-size:0.85rem; }
+  .area-employees { font-family:'Barlow Condensed',sans-serif; font-size:1.15rem; font-weight:700; color:var(--white); margin-top:2px; }
+  .area-employees.unassigned { color:var(--gray); font-style:italic; font-weight:400; font-size:0.95rem; }
+
+  /* ANNOUNCEMENTS */
+  #announcements-card { grid-column:2; grid-row:1; }
+  .announcement-list { list-style:none; display:flex; flex-direction:column; gap:10px; }
+  .announcement-list li { font-size:0.95rem; font-weight:500; line-height:1.4; padding-left:16px; border-left:3px solid var(--orange); color:var(--white); }
+  .announcement-highlight { margin-top:10px; background:var(--card2); border-radius:4px; padding:10px 14px; text-align:center; font-family:'Barlow Condensed',sans-serif; font-size:1.2rem; font-weight:700; color:var(--orange); border:1px solid var(--border); }
+
+  /* MEME */
+  #meme-card { grid-column:3; grid-row:1; }
+  .meme-img-wrap { flex:1; overflow:hidden; display:flex; align-items:center; justify-content:center; background:#111; }
+  .meme-img-wrap img { width:100%; height:100%; object-fit:cover; }
+  .meme-placeholder { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; color:var(--gray); font-size:0.85rem; text-align:center; padding:20px; height:100%; }
+  .meme-placeholder svg { opacity:0.4; }
+
+  /* BOTTOM */
+  .bottom-row { grid-column:1/-1; grid-row:2; display:grid; grid-template-columns:180px 1fr 220px; gap:10px; }
+  #reviews-card .card-body { display:flex; flex-direction:column; gap:8px; justify-content:center; }
+  .review-block { text-align:center; }
+  .review-label { font-size:0.7rem; font-weight:700; color:var(--gray); text-transform:uppercase; letter-spacing:1px; }
+  .review-value { font-family:'Barlow Condensed',sans-serif; font-size:1.6rem; font-weight:800; color:var(--orange); line-height:1.1; }
+  .review-divider { height:1px; background:var(--border); }
+  #events-card .card-body { overflow-y:auto; }
+  .event-row { display:flex; gap:16px; padding:7px 0; border-bottom:1px solid var(--border); align-items:flex-start; }
+  .event-row:last-child { border-bottom:none; }
+  .event-date { font-family:'Barlow Condensed',sans-serif; font-weight:700; color:var(--orange); min-width:70px; font-size:0.95rem; }
+  .event-desc { font-size:0.9rem; color:var(--white); line-height:1.3; }
+  #eom-card .card-body { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; }
+  .eom-avatar { width:64px; height:64px; border-radius:50%; background:var(--card2); border:2px solid var(--orange); display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .eom-avatar img { width:100%; height:100%; object-fit:cover; }
+  .eom-name { font-family:'Barlow Condensed',sans-serif; font-size:1.2rem; font-weight:700; text-align:center; }
+
+  /* FOOTER */
+  footer { background:var(--dark); padding:5px 24px; display:flex; justify-content:flex-end; border-top:1px solid var(--border); flex-shrink:0; }
+  footer span { font-size:0.75rem; color:var(--gray); letter-spacing:1px; }
+
+  /* ADMIN */
+  #admin-btn { position:fixed; bottom:14px; left:14px; background:#333; color:var(--gray); border:1px solid #444; border-radius:4px; padding:5px 10px; font-size:0.7rem; cursor:pointer; font-family:'Barlow',sans-serif; letter-spacing:1px; text-transform:uppercase; z-index:100; transition:all 0.2s; }
+  #admin-btn:hover { background:#444; color:var(--white); }
+  #admin-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:200; overflow-y:auto; }
+  #admin-panel { background:#1e1e1e; border:1px solid #444; border-radius:8px; width:720px; max-width:95vw; margin:30px auto; padding:28px; }
+  #admin-panel h2 { font-family:'Barlow Condensed',sans-serif; font-size:1.5rem; font-weight:800; text-transform:uppercase; letter-spacing:2px; margin-bottom:20px; color:var(--orange); border-bottom:2px solid var(--orange); padding-bottom:10px; }
+  .admin-section { margin-bottom:22px; }
+  .admin-section h3 { font-family:'Barlow Condensed',sans-serif; font-size:1rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--gray); margin-bottom:10px; border-bottom:1px solid var(--border); padding-bottom:6px; }
+  .admin-row { display:flex; gap:10px; margin-bottom:8px; align-items:center; }
+  .admin-row label { font-size:0.8rem; color:var(--gray); min-width:110px; font-weight:600; }
+  .admin-row input, .admin-row textarea { flex:1; background:#2a2a2a; border:1px solid #444; border-radius:4px; color:var(--white); padding:6px 10px; font-family:'Barlow',sans-serif; font-size:0.85rem; }
+  .ann-item { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
+  .ann-item input { flex:1; background:#2a2a2a; border:1px solid #444; border-radius:4px; color:var(--white); padding:6px 10px; font-family:'Barlow',sans-serif; font-size:0.85rem; }
+  .ann-item button, .ev-item button { background:#333; border:none; color:var(--gray); padding:6px 10px; border-radius:4px; cursor:pointer; }
+  .ann-item button:hover, .ev-item button:hover { color:#ff6b6b; }
+  .ev-item { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
+  .ev-item input { padding:6px 10px; background:#2a2a2a; border:1px solid #444; border-radius:4px; color:var(--white); font-family:'Barlow',sans-serif; font-size:0.85rem; }
+  .ev-item .ev-date { width:100px; }
+  .ev-item .ev-desc { flex:1; }
+  .add-btn { background:#2a2a2a; border:1px dashed #555; color:var(--gray); padding:6px 14px; border-radius:4px; cursor:pointer; font-size:0.8rem; font-family:'Barlow',sans-serif; margin-top:4px; }
+  .add-btn:hover { border-color:var(--orange); color:var(--orange); }
+  .admin-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; border-top:1px solid var(--border); padding-top:16px; }
+  .btn-save { background:var(--orange); color:var(--white); border:none; padding:10px 28px; border-radius:4px; font-family:'Barlow Condensed',sans-serif; font-size:1rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; cursor:pointer; }
+  .btn-save:hover { background:#d4561a; }
+  .btn-cancel { background:#333; color:var(--gray); border:none; padding:10px 20px; border-radius:4px; font-family:'Barlow Condensed',sans-serif; font-size:1rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; cursor:pointer; }
+  .btn-cancel:hover { background:#444; color:var(--white); }
+
+  /* CSV UPLOAD BOX */
+  .csv-box { background:#16161e; border:1px solid #2a2a4a; border-radius:6px; padding:16px; }
+  .csv-drop-area { border:2px dashed #444; border-radius:6px; padding:20px; text-align:center; cursor:pointer; transition:all 0.2s; margin-bottom:10px; }
+  .csv-drop-area:hover, .csv-drop-area.drag-over { border-color:var(--orange); background:#1a1a0a; }
+  .csv-drop-area input { display:none; }
+  .csv-drop-label { font-size:0.85rem; color:var(--gray); }
+  .csv-drop-label strong { color:var(--orange); }
+  .csv-status { font-size:0.78rem; margin-top:8px; padding:8px 12px; border-radius:4px; display:none; }
+  .csv-status.success { background:#1a3a1a; border:1px solid #3a6a3a; color:#6abf6a; display:block; }
+  .csv-status.error { background:#3a1a1a; border:1px solid #6a3a3a; color:#bf6a6a; display:block; }
+  .csv-note { font-size:0.75rem; color:#666; line-height:1.6; }
+
+  /* ROLE MAP */
+  .role-map-grid { display:flex; flex-direction:column; gap:6px; }
+  .role-map-row { display:flex; gap:10px; align-items:center; }
+  .role-map-row label { min-width:160px; font-size:0.8rem; color:var(--gray); font-weight:600; font-family:'Barlow',sans-serif; }
+  .role-map-row select { flex:1; background:#2a2a2a; border:1px solid #444; border-radius:4px; color:var(--white); padding:6px 10px; font-family:'Barlow',sans-serif; font-size:0.85rem; }
+  .role-map-row .area-checkboxes { display:flex; gap:8px; flex-wrap:wrap; flex:1; }
+  .area-cb-label { display:flex; align-items:center; gap:4px; font-size:0.78rem; color:var(--gray); cursor:pointer; white-space:nowrap; }
+  .area-cb-label input { accent-color:var(--orange); }
+
+  /* MANUAL OVERRIDE */
+  .manual-grid { display:flex; flex-direction:column; gap:6px; }
+  .manual-row { display:flex; gap:10px; align-items:center; }
+  .manual-row label { min-width:130px; font-size:0.8rem; color:var(--gray); font-weight:600; }
+  .manual-row input { flex:1; background:#2a2a2a; border:1px solid #444; border-radius:4px; color:var(--white); padding:6px 10px; font-family:'Barlow',sans-serif; font-size:0.85rem; }
+
+  /* MEME UPLOAD */
+  .meme-upload-area { border:2px dashed #444; border-radius:6px; padding:16px; text-align:center; cursor:pointer; transition:all 0.2s; }
+  .meme-upload-area:hover { border-color:var(--orange); }
+  .meme-upload-area input { display:none; }
+  .meme-upload-label { font-size:0.85rem; color:var(--gray); cursor:pointer; }
+  .meme-preview { max-height:80px; border-radius:4px; margin-top:8px; }
+
+  ::-webkit-scrollbar { width:4px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:#444; border-radius:2px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-area">
+    <svg class="logo-icon" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="32,4 58,18 58,46 32,60 6,46 6,18" fill="#1a1a1a" stroke="#e8651a" stroke-width="2"/>
+      <text x="32" y="38" text-anchor="middle" font-family="Barlow Condensed,sans-serif" font-weight="800" font-size="28" fill="#e8651a">A</text>
+      <line x1="8" y1="32" x2="24" y2="32" stroke="#e8651a" stroke-width="2"/>
+      <line x1="40" y1="32" x2="56" y2="32" stroke="#e8651a" stroke-width="2"/>
+      <polygon points="8,28 20,32 8,36" fill="#e8651a" opacity="0.7"/>
+      <polygon points="56,28 44,32 56,36" fill="#e8651a" opacity="0.7"/>
+    </svg>
+    <div>
+      <div class="logo-text">AIRBORNE <span>A</span></div>
+      <div class="logo-sub">Draper</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="sling-status">
+      <div class="status-dot" id="sling-dot"></div>
+      <span id="sling-status-text">Schedule: Not loaded</span>
+    </div>
+    <div class="clock-area">
+      <div class="clock-date" id="clock-date"></div>
+      <div class="clock-time" id="clock-time"></div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="card" id="areas-card">
+    <div class="card-header"><h2>Areas</h2></div>
+    <div class="card-body" id="areas-body"></div>
+  </div>
+
+  <div class="card" id="announcements-card">
+    <div class="card-header"><h2>Announcements</h2></div>
+    <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+      <ul class="announcement-list" id="announcements-list"></ul>
+      <div class="announcement-highlight" id="announcement-highlight"></div>
+    </div>
+  </div>
+
+  <div class="card" id="meme-card">
+    <div class="card-header"><h2>Meme of the Week</h2></div>
+    <div class="meme-img-wrap" id="meme-wrap">
+      <div class="meme-placeholder">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <span>Upload a meme<br>in the admin panel</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-row">
+    <div class="card" id="reviews-card">
+      <div class="card-body">
+        <div class="review-block">
+          <div class="review-label">Review Count for the Month</div>
+          <div class="review-value" id="review-count">— —</div>
+        </div>
+        <div class="review-divider"></div>
+        <div class="review-block">
+          <div class="review-label">Review Goal for the Month</div>
+          <div class="review-value" id="review-goal">— —</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="events-card">
+      <div class="card-header"><span style="font-size:1.1rem">📅</span><h2>Upcoming Events</h2></div>
+      <div class="card-body" id="events-body"></div>
+    </div>
+
+    <div class="card" id="eom-card">
+      <div class="card-header"><h2>Employee of the Month</h2></div>
+      <div class="card-body">
+        <div class="eom-avatar" id="eom-avatar">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div class="eom-name" id="eom-name">—</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer><span id="updated-label">Updated for —</span></footer>
+<button id="admin-btn" onclick="openAdmin()">⚙ Admin</button>
+
+<!-- ADMIN OVERLAY -->
+<div id="admin-overlay">
+  <div id="admin-panel">
+    <h2>⚙ Board Admin Panel</h2>
+
+    <!-- SLING CSV UPLOAD -->
+    <div class="admin-section">
+      <h3>📂 Sling Schedule Import</h3>
+      <div class="csv-box">
+        <div class="csv-drop-area" id="csv-drop" onclick="document.getElementById('csv-file').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+          <input type="file" id="csv-file" accept=".csv" onchange="handleCSVFile(event)"/>
+          <div class="csv-drop-label">
+            <strong>Click to upload</strong> or drag & drop your Sling CSV export here<br>
+            <span style="font-size:0.75rem;color:#555;margin-top:4px;display:block;">Export from Sling: Schedule → Export → CSV</span>
+          </div>
+        </div>
+        <div class="csv-status" id="csv-status"></div>
+        <div class="csv-note">
+          The board will read today's date from the CSV, find all employees scheduled today, match their role to an area, and auto-fill the Areas section. Upload a fresh CSV each day.
+        </div>
+      </div>
+    </div>
+
+    <!-- ROLE → AREA MAPPING -->
+    <div class="admin-section">
+      <h3>Role → Area Mapping</h3>
+      <div style="font-size:0.75rem;color:#666;margin-bottom:10px;">Check which areas each role is eligible for. The board assigns one employee per area in priority order.</div>
+      <div class="role-map-grid" id="role-map-grid"></div>
+    </div>
+
+    <!-- MANUAL OVERRIDE -->
+    <div class="admin-section">
+      <h3>Manual Area Override <span style="color:#555;font-size:0.75rem;font-weight:400;text-transform:none;">(fallback if no CSV loaded)</span></h3>
+      <div class="manual-grid" id="manual-grid"></div>
+    </div>
+
+    <!-- ANNOUNCEMENTS -->
+    <div class="admin-section">
+      <h3>Announcements</h3>
+      <div id="admin-ann-list"></div>
+      <button class="add-btn" onclick="addAnnouncement()">+ Add Announcement</button>
+      <div class="admin-row" style="margin-top:10px;">
+        <label>Highlight Line</label>
+        <input type="text" id="admin-highlight" placeholder="e.g. Give someone a high five :)" />
+      </div>
+    </div>
+
+    <!-- EVENTS -->
+    <div class="admin-section">
+      <h3>Upcoming Events</h3>
+      <div id="admin-events-list"></div>
+      <button class="add-btn" onclick="addEvent()">+ Add Event</button>
+    </div>
+
+    <!-- REVIEWS -->
+    <div class="admin-section">
+      <h3>Review Goals</h3>
+      <div class="admin-row">
+        <label>Review Count</label>
+        <input type="text" id="admin-review-count" placeholder="e.g. 3 - 5.0" />
+      </div>
+      <div class="admin-row">
+        <label>Review Goal</label>
+        <input type="text" id="admin-review-goal" placeholder="e.g. 50 - 4.8" />
+      </div>
+    </div>
+
+    <!-- EOM -->
+    <div class="admin-section">
+      <h3>Employee of the Month</h3>
+      <div class="admin-row">
+        <label>Name</label>
+        <input type="text" id="admin-eom-name" placeholder="e.g. Parker H." />
+      </div>
+    </div>
+
+    <!-- MEME -->
+    <div class="admin-section">
+      <h3>Meme of the Week</h3>
+      <div class="meme-upload-area" onclick="document.getElementById('meme-file').click()">
+        <input type="file" id="meme-file" accept="image/*" onchange="handleMemeUpload(event)"/>
+        <div class="meme-upload-label">Click to upload an image</div>
+        <img id="meme-preview" class="meme-preview" style="display:none"/>
+      </div>
+    </div>
+
+    <div class="admin-actions">
+      <button class="btn-cancel" onclick="closeAdmin()">Cancel</button>
+      <button class="btn-save" onclick="saveAdmin()">Save & Update Board</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONSTANTS ──────────────────────────────────
+const ALL_AREAS = ["AirX", "Slides", "Space Station", "Wipeout", "Front Desk"];
+
+// All roles found in Sling export + their default area eligibility
+const ALL_ROLES = [
+  { name: "Manager",              defaultAreas: ["Front Desk","AirX","Slides","Space Station","Wipeout"], priority: 0 },
+  { name: "Manager on Duty",      defaultAreas: ["Front Desk","AirX","Slides","Space Station","Wipeout"], priority: 0 },
+  { name: "Ops GM",               defaultAreas: ["Front Desk","AirX","Slides","Space Station","Wipeout"], priority: 0 },
+  { name: "AGM",                  defaultAreas: ["Front Desk","AirX","Slides","Space Station","Wipeout"], priority: 0 },
+  { name: "Supervisor",           defaultAreas: ["Front Desk","AirX","Slides","Space Station","Wipeout"], priority: 1 },
+  { name: "Lvl 2 - Rotation",     defaultAreas: ["AirX","Space Station","Slides","Wipeout"],              priority: 2 },
+  { name: "Lvl 1 - Rotation",     defaultAreas: ["Space Station","Slides","Wipeout"],                     priority: 3 },
+  { name: "Front Desk",           defaultAreas: ["Front Desk"],                                           priority: 2 },
+  { name: "Air-Bar",              defaultAreas: [],                                                        priority: 99 },
+  { name: "Trainee",              defaultAreas: [],                                                        priority: 99 },
+  { name: "Event Host",           defaultAreas: [],                                                        priority: 99 },
+  { name: "Events / Party Manager", defaultAreas: [],                                                     priority: 99 },
+];
+
+// ── STATE ─────────────────────────────────────
+function defaultState() {
+  const roleMap = {};
+  ALL_ROLES.forEach(r => { roleMap[r.name] = [...r.defaultAreas]; });
+  return {
+    roleMap,
+    manualAreas: { "AirX":"","Slides":"","Space Station":"","Wipeout":"","Front Desk":"" },
+    csvAreas: null,
+    csvDate: null,
+    announcements: [
+      "Please ensure the platforms have been cleaned before closing cleaning assignments",
+      "Expect to rotate throughout the day. The area you start in may not be the area you close."
+    ],
+    highlight: "Have a great shift!",
+    events: [{ date:"April 18th", desc:"After Hours Private Event" }],
+    reviewCount: "3 - 5.0",
+    reviewGoal: "50 - 4.8",
+    eomName: "Parker H.",
+    memeDataUrl: null
+  };
+}
+
+function loadState() {
+  try {
+    const s = localStorage.getItem('airborne_board_v3');
+    if (s) return JSON.parse(s);
+  } catch(e) {}
+  return defaultState();
+}
+
+let state = loadState();
+
+function saveState() {
+  try { localStorage.setItem('airborne_board_v3', JSON.stringify(state)); } catch(e) {}
+}
+
+// ── CLOCK ──────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock-date').textContent =
+    now.toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'});
+  document.getElementById('clock-time').textContent =
+    now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+}
+setInterval(updateClock,1000); updateClock();
+
+// ── CSV PARSING ────────────────────────────────
+function parseCSV(text) {
+  // The Sling CSV has dates in row 1 as column headers (after empty first cell)
+  // Then rows: EmployeeName, [shift info per day...]
+  // Shift info may contain role like "Lvl 2 - Rotation • Airborne Draper"
+
+  const lines = text.split('\n');
+  if (!lines.length) return null;
+
+  // Parse header row to get dates and their column index
+  const headerCells = parseCSVRow(lines[0]);
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+
+  // Find which column index matches today
+  let todayColIndex = -1;
+  for (let i = 1; i < headerCells.length; i++) {
+    const cellDate = headerCells[i].trim();
+    if (cellDate === todayStr) {
+      todayColIndex = i;
+      break;
+    }
+  }
+
+  if (todayColIndex === -1) {
+    // Try to find the closest date if today isn't in range
+    return { error: `Today (${todayStr}) not found in this CSV. The CSV covers: ${headerCells.filter(c=>c.trim()).join(', ')}` };
+  }
+
+  // Now parse each employee row
+  const skipRows = ['Unassigned shifts','Available shifts','Scheduled shifts',''];
+  const results = []; // { name, role }
+
+  // We need to handle multiline cells — the CSV uses quotes for multiline
+  const rows = parseCSVRows(text);
+
+  for (let r = 1; r < rows.length; r++) {
+    const row = rows[r];
+    if (!row || !row.length) continue;
+
+    const name = (row[0] || '').trim();
+    if (!name || skipRows.includes(name) || name === ',') continue;
+
+    // Get today's cell
+    const todayCell = (row[todayColIndex] || '').trim();
+    if (!todayCell) continue;
+
+    // Extract role from cell - look for "Role • Airborne Draper" pattern
+    const roleMatch = todayCell.match(/([A-Za-z0-9\s\-\/]+)\s*•\s*Airborne Draper/);
+    if (!roleMatch) continue;
+
+    const role = roleMatch[1].trim();
+
+    // Skip if it's "Unavailable" or "Time off"
+    if (role === 'Unavailable' || role === 'Time off') continue;
+
+    results.push({ name, role });
+  }
+
+  return { employees: results, date: todayStr, colIndex: todayColIndex };
+}
+
+function parseCSVRows(text) {
+  // Handle quoted multiline cells properly
+  const rows = [];
+  let currentRow = [];
+  let currentCell = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    const next = text[i+1];
+
+    if (ch === '"') {
+      if (inQuotes && next === '"') {
+        currentCell += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (ch === ',' && !inQuotes) {
+      currentRow.push(currentCell);
+      currentCell = '';
+    } else if ((ch === '\n' || (ch === '\r' && next === '\n')) && !inQuotes) {
+      if (ch === '\r') i++;
+      currentRow.push(currentCell);
+      rows.push(currentRow);
+      currentRow = [];
+      currentCell = '';
+    } else {
+      currentCell += ch;
+    }
+  }
+  if (currentCell || currentRow.length) {
+    currentRow.push(currentCell);
+    rows.push(currentRow);
+  }
+  return rows;
+}
+
+function parseCSVRow(line) {
+  // Simple single-line CSV parser
+  const cells = [];
+  let current = '';
+  let inQ = false;
+  for (const ch of line) {
+    if (ch === '"') { inQ = !inQ; }
+    else if (ch === ',' && !inQ) { cells.push(current); current = ''; }
+    else { current += ch; }
+  }
+  cells.push(current);
+  return cells;
+}
+
+function assignAreasFromCSV(employees) {
+  // Build priority-sorted list
+  const rolePriorityMap = {};
+  ALL_ROLES.forEach(r => { rolePriorityMap[r.name] = r.priority ?? 99; });
+
+  employees.sort((a, b) => {
+    return (rolePriorityMap[a.role] ?? 99) - (rolePriorityMap[b.role] ?? 99);
+  });
+
+  const areaAssignments = {};
+  ALL_AREAS.forEach(a => areaAssignments[a] = '');
+  const filledAreas = new Set();
+
+  employees.forEach(({ name, role }) => {
+    const eligibleAreas = state.roleMap[role] || [];
+    const openArea = eligibleAreas.find(a => !filledAreas.has(a));
+    if (openArea) {
+      areaAssignments[openArea] = name;
+      filledAreas.add(openArea);
+    }
+  });
+
+  return areaAssignments;
+}
+
+// ── CSV FILE HANDLERS ──────────────────────────
+function handleCSVFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  readCSVFile(file);
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  document.getElementById('csv-drop').classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+  document.getElementById('csv-drop').classList.remove('drag-over');
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('csv-drop').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.endsWith('.csv')) readCSVFile(file);
+}
+
+function readCSVFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const result = parseCSV(e.target.result);
+    const statusEl = document.getElementById('csv-status');
+
+    if (!result) {
+      statusEl.className = 'csv-status error';
+      statusEl.textContent = '✗ Could not parse CSV file.';
+      return;
+    }
+
+    if (result.error) {
+      statusEl.className = 'csv-status error';
+      statusEl.textContent = '✗ ' + result.error;
+      return;
+    }
+
+    if (!result.employees.length) {
+      statusEl.className = 'csv-status error';
+      statusEl.textContent = '✗ No scheduled employees found for today in this CSV.';
+      return;
+    }
+
+    // Assign areas
+    const assigned = assignAreasFromCSV(result.employees);
+    state.csvAreas = assigned;
+    state.csvDate = result.date;
+
+    const filled = Object.values(assigned).filter(v => v).length;
+    const names = result.employees.map(e => `${e.name} (${e.role})`).join(', ');
+    statusEl.className = 'csv-status success';
+    statusEl.textContent = `✓ Loaded ${result.employees.length} employees for today — ${filled} areas assigned. Found: ${names}`;
+
+    saveState();
+    renderBoard();
+    updateSlingStatus();
+  };
+  reader.readAsText(file);
+}
+
+// ── STATUS INDICATOR ────────────────────────────
+function updateSlingStatus() {
+  const dot = document.getElementById('sling-dot');
+  const text = document.getElementById('sling-status-text');
+  if (state.csvAreas && state.csvDate) {
+    const today = new Date().toISOString().split('T')[0];
+    if (state.csvDate === today) {
+      dot.className = 'status-dot connected';
+      text.textContent = `Schedule: Loaded for today`;
+    } else {
+      dot.className = 'status-dot manual';
+      text.textContent = `Schedule: CSV is from ${state.csvDate} — upload today's`;
+    }
+  } else if (Object.values(state.manualAreas).some(v => v)) {
+    dot.className = 'status-dot manual';
+    text.textContent = 'Schedule: Manual';
+  } else {
+    dot.className = 'status-dot';
+    text.textContent = 'Schedule: Not loaded';
+  }
+}
+
+// ── RENDER BOARD ────────────────────────────────
+function renderBoard() {
+  // Use CSV areas if loaded for today, else manual
+  const today = new Date().toISOString().split('T')[0];
+  const areas = (state.csvAreas && state.csvDate === today) ? state.csvAreas : state.manualAreas;
+
+  const areasBody = document.getElementById('areas-body');
+  areasBody.innerHTML = '';
+  ALL_AREAS.forEach(area => {
+    const emp = areas[area] || '';
+    const div = document.createElement('div');
+    div.className = 'area-item';
+    div.innerHTML = `
+      <div class="area-name">${area}</div>
+      <div class="area-employees ${emp?'':'unassigned'}">${emp || 'Unassigned'}</div>
+    `;
+    areasBody.appendChild(div);
+  });
+
+  // Announcements
+  const annList = document.getElementById('announcements-list');
+  annList.innerHTML = '';
+  state.announcements.forEach(ann => {
+    if (!ann.trim()) return;
+    const li = document.createElement('li');
+    li.textContent = ann;
+    annList.appendChild(li);
+  });
+  const hl = document.getElementById('announcement-highlight');
+  hl.textContent = state.highlight ? `- ${state.highlight}` : '';
+  hl.style.display = state.highlight ? 'block' : 'none';
+
+  // Events
+  const evBody = document.getElementById('events-body');
+  evBody.innerHTML = '';
+  state.events.forEach(ev => {
+    if (!ev.date && !ev.desc) return;
+    const row = document.createElement('div');
+    row.className = 'event-row';
+    row.innerHTML = `<div class="event-date">${ev.date}</div><div class="event-desc">- ${ev.desc}</div>`;
+    evBody.appendChild(row);
+  });
+
+  // Reviews & EOM
+  document.getElementById('review-count').textContent = state.reviewCount || '— —';
+  document.getElementById('review-goal').textContent = state.reviewGoal || '— —';
+  document.getElementById('eom-name').textContent = state.eomName || '—';
+
+  // Meme
+  if (state.memeDataUrl) {
+    document.getElementById('meme-wrap').innerHTML =
+      `<img src="${state.memeDataUrl}" style="width:100%;height:100%;object-fit:cover;"/>`;
+  }
+
+  // Footer
+  document.getElementById('updated-label').textContent =
+    `Updated for ${new Date().toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'})}`;
+
+  updateSlingStatus();
+}
+
+// ── ADMIN PANEL ─────────────────────────────────
+function openAdmin() {
+  // Role map checkboxes
+  const grid = document.getElementById('role-map-grid');
+  grid.innerHTML = '';
+  ALL_ROLES.forEach(roleDef => {
+    const row = document.createElement('div');
+    row.className = 'role-map-row';
+    const currentAreas = state.roleMap[roleDef.name] || [];
+    const checkboxes = ALL_AREAS.map(area => `
+      <label class="area-cb-label">
+        <input type="checkbox" data-role="${roleDef.name}" data-area="${area}"
+          ${currentAreas.includes(area) ? 'checked' : ''}/>
+        ${area}
+      </label>
+    `).join('');
+    row.innerHTML = `<label>${roleDef.name}</label><div class="area-checkboxes">${checkboxes}</div>`;
+    grid.appendChild(row);
+  });
+
+  // Manual overrides
+  const manualGrid = document.getElementById('manual-grid');
+  manualGrid.innerHTML = '';
+  ALL_AREAS.forEach(area => {
+    const row = document.createElement('div');
+    row.className = 'manual-row';
+    row.innerHTML = `
+      <label>${area}</label>
+      <input type="text" data-area="${area}" value="${state.manualAreas[area]||''}" placeholder="Employee name..." />
+    `;
+    manualGrid.appendChild(row);
+  });
+
+  renderAdminAnnouncements();
+  document.getElementById('admin-highlight').value = state.highlight || '';
+  renderAdminEvents();
+  document.getElementById('admin-review-count').value = state.reviewCount || '';
+  document.getElementById('admin-review-goal').value = state.reviewGoal || '';
+  document.getElementById('admin-eom-name').value = state.eomName || '';
+  document.getElementById('csv-status').className = 'csv-status';
+
+  if (state.memeDataUrl) {
+    document.getElementById('meme-preview').src = state.memeDataUrl;
+    document.getElementById('meme-preview').style.display = 'block';
+    document.querySelector('.meme-upload-label').textContent = 'Click to change image';
+  }
+
+  document.getElementById('admin-overlay').style.display = 'block';
+}
+
+function closeAdmin() {
+  document.getElementById('admin-overlay').style.display = 'none';
+}
+
+function renderAdminAnnouncements() {
+  const list = document.getElementById('admin-ann-list');
+  list.innerHTML = '';
+  state.announcements.forEach((ann, i) => {
+    const item = document.createElement('div');
+    item.className = 'ann-item';
+    item.innerHTML = `
+      <input type="text" value="${ann.replace(/"/g,'&quot;')}" data-ann-index="${i}" placeholder="Announcement..." />
+      <button onclick="removeAnnouncement(${i})">✕</button>
+    `;
+    list.appendChild(item);
+  });
+}
+
+function addAnnouncement() { state.announcements.push(''); renderAdminAnnouncements(); }
+function removeAnnouncement(i) { state.announcements.splice(i,1); renderAdminAnnouncements(); }
+
+function renderAdminEvents() {
+  const list = document.getElementById('admin-events-list');
+  list.innerHTML = '';
+  state.events.forEach((ev,i) => {
+    const item = document.createElement('div');
+    item.className = 'ev-item';
+    item.innerHTML = `
+      <input class="ev-date" type="text" value="${ev.date}" data-ev-index="${i}" data-ev-field="date" placeholder="Date..." />
+      <input class="ev-desc" type="text" value="${ev.desc}" data-ev-index="${i}" data-ev-field="desc" placeholder="Description..." />
+      <button onclick="removeEvent(${i})">✕</button>
+    `;
+    list.appendChild(item);
+  });
+}
+
+function addEvent() { state.events.push({date:'',desc:''}); renderAdminEvents(); }
+function removeEvent(i) { state.events.splice(i,1); renderAdminEvents(); }
+
+function handleMemeUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    state.memeDataUrl = ev.target.result;
+    document.getElementById('meme-preview').src = ev.target.result;
+    document.getElementById('meme-preview').style.display = 'block';
+    document.querySelector('.meme-upload-label').textContent = 'Click to change image';
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveAdmin() {
+  // Role map from checkboxes
+  ALL_ROLES.forEach(roleDef => {
+    const checked = [];
+    document.querySelectorAll(`input[data-role="${roleDef.name}"]`).forEach(cb => {
+      if (cb.checked) checked.push(cb.dataset.area);
+    });
+    state.roleMap[roleDef.name] = checked;
+  });
+
+  // Manual overrides
+  document.querySelectorAll('#manual-grid input[data-area]').forEach(inp => {
+    state.manualAreas[inp.dataset.area] = inp.value.trim();
+  });
+
+  // Announcements
+  state.announcements = [];
+  document.querySelectorAll('#admin-ann-list input[data-ann-index]').forEach(inp => {
+    if (inp.value.trim()) state.announcements.push(inp.value.trim());
+  });
+  state.highlight = document.getElementById('admin-highlight').value.trim();
+
+  // Events
+  state.events = [];
+  const evDates = document.querySelectorAll('#admin-events-list input[data-ev-field="date"]');
+  const evDescs = document.querySelectorAll('#admin-events-list input[data-ev-field="desc"]');
+  evDates.forEach((d,i) => { state.events.push({date:d.value.trim(),desc:evDescs[i]?.value.trim()||''}); });
+
+  state.reviewCount = document.getElementById('admin-review-count').value.trim();
+  state.reviewGoal = document.getElementById('admin-review-goal').value.trim();
+  state.eomName = document.getElementById('admin-eom-name').value.trim();
+
+  // Re-assign areas if CSV is loaded (in case role map changed)
+  if (state.csvAreas && state._lastCSVEmployees) {
+    state.csvAreas = assignAreasFromCSV(state._lastCSVEmployees);
+  }
+
+  saveState();
+  renderBoard();
+  closeAdmin();
+}
+
+document.getElementById('admin-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeAdmin();
+});
+
+// ── INIT ────────────────────────────────────────
+renderBoard();
+</script>
+</body>
+</html>
